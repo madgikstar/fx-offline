@@ -1,4 +1,4 @@
-const CACHE_NAME = "fx-offline-v2";
+const CACHE_NAME = "fx-offline-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -23,8 +23,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      // Offline-first
-      if (cached) return cached;
+      if (cached) return cached; // offline-first
       return fetch(event.request).catch(() => caches.match("./index.html"));
     })
   );
