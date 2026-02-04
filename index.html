@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#1f2a44" />
+  <title>FX Offline - EUR USD KHR</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root { --bg:#0b1020; --card:#121a33; --text:#e9ecf7; --muted:#aab3d6; --border:#26305a; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    body { margin:0; background: linear-gradient(180deg,#0b1020,#070a14); color:var(--text); }
+    header { padding:18px 16px 8px; }
+    h1 { margin:0; font-size:18px; font-weight:750; letter-spacing:.2px; }
+    .wrap { padding: 12px 16px 28px; display: grid; gap: 12px; max-width: 560px; margin: 0 auto; }
+    .card { background: rgba(18,26,51,.92); border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .row { display:flex; gap:10px; align-items:center; }
+    .grow { flex:1; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input, select {
+      width: 100%; padding: 12px 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: #0e1530; color: var(--text);
+      outline: none;
+    }
+    .btn {
+      padding: 12px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: #0e1530; color: var(--text); font-weight: 650; cursor: pointer;
+    }
+    .btn.primary { background:#1f2a44; }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
+    .kpi { font-size: 26px; font-weight: 800; margin-top: 4px; }
+    .sub { color: var(--muted); font-size: 12px; }
+    .hr { height:1px; background: rgba(38,48,90,.7); margin: 10px 0; }
+    .pill { display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius: 999px; border: 1px solid var(--border); background:#0e1530; font-size: 12px; color: var(--muted); }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .small { font-size:12px; color: var(--muted); }
+    .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; background: #0e1530; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 12px; display:none; max-width: 90vw;}
+    @media (max-width: 420px){ .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap" style="padding:0 16px;">
+      <h1>FX Offline — EUR / USD / KHR</h1>
+      <div class="row" style="gap:8px; padding-bottom:8px;">
+        <span id="netPill" class="pill">⚡ Offline-ready</span>
+        <span id="lastPill" class="pill">⏱ —</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <label>Montant</label>
+      <div class="row">
+        <input id="amount" class="grow" inputmode="decimal" placeholder="Ex: 50" value="50" />
+        <select id="fromCcy" style="width:110px;">
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+          <option value="KHR">KHR</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button id="swapBtn" class="btn">↔ Swap</button>
+        <button id="installBtn" class="btn primary" style="display:none;">⬇ Installer</button>
+      </div>
+      <div class="hr"></div>
+      <div class="grid2">
+        <div class="card" style="padding:12px; border-radius:14px;">
+          <div class="sub" id="out1Label">—</div>
+          <div class="kpi" id="out1Value">—</div>
+        </div>
+        <div class="card" style="padding:12px; border-radius:14px;">
+          <div class="sub" id="out2Label">—</div>
+          <div class="kpi" id="out2Value">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div style="font-weight:750;">Taux (base USD)</div>
+          <div class="small">Sauvegardés sur ton téléphone • offline OK</div>
+        </div>
+        <button id="resetBtn" class="btn">Reset</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid2">
+        <div>
+          <label>1 USD = ? EUR</label>
+          <input id="usdToEur" inputmode="decimal" />
+        </div>
+        <div>
+          <label>1 USD = ? KHR</label>
+          <input id="usdToKhr" inputmode="decimal" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button id="saveBtn" class="btn primary grow">💾 Enregistrer</button>
+        <button id="updateBtn" class="btn grow">🔄 Mettre à jour (si internet)</button>
+      </div>
+
+      <div class="small" style="margin-top:10px;">
+        Astuce Cambodge : tu peux mettre le taux du changeur (ex. 1 USD = 4050 KHR) pour coller à la réalité.
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="font-weight:750;">Raccourci ultra rapide</div>
+      <div class="small">Tape un montant en USD puis choisis KHR (ou inverse) — tout reste disponible hors-ligne.</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+  // ---------- Offline-first data ----------
+  const STORAGE_KEY = "fx_rates_v2";
+  const DEFAULT_RATES = {
+    usdToEur: 0.92,
+    usdToKhr: 4100,
+    updatedAt: new Date().toISOString(),
+    source: "Seed (embedded)"
+  };
+
+  function loadRates() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_RATES };
+      const obj = JSON.parse(raw);
+      if (!obj.usdToEur || !obj.usdToKhr) return { ...DEFAULT_RATES };
+      return obj;
+    } catch {
+      return { ...DEFAULT_RATES };
+    }
+  }
+
+  function saveRates(r) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
+  }
+
+  // ---------- Converter (base USD) ----------
+  function convert(amount, from, to, rates) {
+    if (from === to) return amount;
+
+    const usd = (from === "USD") ? amount
+              : (from === "EUR") ? amount / rates.usdToEur
+              : amount / rates.usdToKhr;
+
+    const out = (to === "USD") ? usd
+              : (to === "EUR") ? usd * rates.usdToEur
+              : usd * rates.usdToKhr;
+
+    return out;
+  }
+
+  function fmt(value, ccy) {
+    if (!isFinite(value)) return "—";
+    if (ccy === "KHR") return Math.round(value).toString();
+    return value.toFixed(2);
+  }
+
+  // ---------- UI wiring ----------
+  const el = (id) => document.getElementById(id);
+  const amountEl = el("amount");
+  const fromEl = el("fromCcy");
+  const out1LabelEl = el("out1Label");
+  const out2LabelEl = el("out2Label");
+  const out1ValueEl = el("out1Value");
+  const out2ValueEl = el("out2Value");
+  const usdToEurEl = el("usdToEur");
+  const usdToKhrEl = el("usdToKhr");
+  const lastPill = el("lastPill");
+  const netPill = el("netPill");
+  const toast = el("toast");
+
+  let rates = loadRates();
+
+  function toastMsg(msg) {
+    toast.textContent = msg;
+    toast.style.display = "block";
+    setTimeout(() => toast.style.display = "none", 2200);
+  }
+
+  function setPills() {
+    const dt = new Date(rates.updatedAt);
+    const pad = (n) => String(n).padStart(2,'0');
+    const label = `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    lastPill.textContent = `⏱ ${label} • ${rates.source}`;
+    netPill.textContent = navigator.onLine ? "🌐 En ligne" : "⚡ Hors-ligne";
+  }
+
+  function syncRatesInputs() {
+    usdToEurEl.value = String(rates.usdToEur);
+    usdToKhrEl.value = String(rates.usdToKhr);
+  }
+
+  function render() {
+    const raw = (amountEl.value || "").replace(",", ".").trim();
+    const amt = parseFloat(raw);
+    const from = fromEl.value;
+    const targets = ["EUR","USD","KHR"].filter(x => x !== from);
+
+    const v1 = convert(isNaN(amt) ? 0 : amt, from, targets[0], rates);
+    const v2 = convert(isNaN(amt) ? 0 : amt, from, targets[1], rates);
+
+    out1LabelEl.textContent = `${targets[0]}`
+    out2LabelEl.textContent = `${targets[1]}`
+    out1ValueEl.textContent = fmt(v1, targets[0]);
+    out2ValueEl.textContent = fmt(v2, targets[1]);
+
+    setPills();
+  }
+
+  // Buttons
+  el("swapBtn").addEventListener("click", () => {
+    // simple swap: switch between EUR and USD (fast use)
+    fromEl.value = (fromEl.value === "EUR") ? "USD" : "EUR";
+    render();
+  });
+
+  el("saveBtn").addEventListener("click", () => {
+    const eur = parseFloat(usdToEurEl.value.replace(",", "."));
+    const khr = parseFloat(usdToKhrEl.value.replace(",", "."));
+    if (!isFinite(eur) || eur <= 0 || !isFinite(khr) || khr <= 0) {
+      toastMsg("Taux invalides.");
+      return;
+    }
+    rates = {
+      usdToEur: eur,
+      usdToKhr: khr,
+      updatedAt: new Date().toISOString(),
+      source: "Manual"
+    };
+    saveRates(rates);
+    render();
+    toastMsg("Taux enregistrés ✅");
+  });
+
+  el("resetBtn").addEventListener("click", () => {
+    rates = { ...DEFAULT_RATES, updatedAt: new Date().toISOString(), source: "Seed (embedded)" };
+    saveRates(rates);
+    syncRatesInputs();
+    render();
+    toastMsg("Reset OK");
+  });
+
+  // Online update (optional): if API reachable, fetch fresh rates
+  el("updateBtn").addEventListener("click", async () => {
+    if (!navigator.onLine) {
+      toastMsg("Pas de connexion — offline OK.");
+      return;
+    }
+    el("updateBtn").disabled = true;
+    el("updateBtn").textContent = "⏳ Mise à jour...";
+    try {
+      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,KHR", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!data?.rates?.EUR || !data?.rates?.KHR) throw new Error("Missing EUR/KHR");
+      rates = {
+        usdToEur: Number(data.rates.EUR),
+        usdToKhr: Number(data.rates.KHR),
+        updatedAt: new Date().toISOString(),
+        source: "exchangerate.host"
+      };
+      saveRates(rates);
+      syncRatesInputs();
+      render();
+      toastMsg("Taux mis à jour ✅");
+    } catch (e) {
+      toastMsg("MAJ impossible. On garde les taux offline.");
+    } finally {
+      el("updateBtn").disabled = false;
+      el("updateBtn").textContent = "🔄 Mettre à jour (si internet)";
+    }
+  });
+
+  // Inputs
+  ["input","change"].forEach(evt => {
+    amountEl.addEventListener(evt, render);
+    fromEl.addEventListener(evt, render);
+  });
+
+  window.addEventListener("online", render);
+  window.addEventListener("offline", render);
+
+  // Init
+  syncRatesInputs();
+  render();
+
+  // Service worker registration (offline cache)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+
+  // Install prompt (Android Chrome)
+  let deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = el("installBtn");
+    btn.style.display = "inline-block";
+    btn.addEventListener("click", async () => {
+      btn.style.display = "none";
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    }, { once: true });
+  });
+</script>
+</body>
+</html>

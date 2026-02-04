@@ -1,0 +1,15 @@
+{
+  "name": "FX Offline (EUR USD KHR)",
+  "short_name": "FX Offline",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#1f2a44",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAK0lEQVR4nO3BMQEAAADCoPdPbQ8HFAAAAAAAAAAAAAAAAAAAAAAAwKcGkAABf8uQzQAAAABJRU5ErkJggg==",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
